@@ -6,6 +6,7 @@ from tensorflow.keras.layers import LSTM, Dense
 import matplotlib.pyplot as plt
 from sklearn.metrics import mean_squared_error, mean_absolute_error, r2_score
 from tkinter import Tk, filedialog
+import time  # 🕒
 
 def select_file(title):
     root = Tk()
@@ -63,22 +64,34 @@ def main():
     for col in df.columns:
         df_scaled[col] = df[col] / df[col].max()
     
-    # Predicción con solo precipitación
+    # 🕒 Tiempo para modelo con solo precipitación
+    start_time_prec = time.time()
     X_prec, y_prec = prepare_data(df_scaled, ['p_ens'], 'Streamflow')
     model_prec = train_lstm(X_prec, y_prec)
     y_pred_prec = model_prec.predict(X_prec)
+    elapsed_prec = time.time() - start_time_prec
+    print(f"🕒 Tiempo de ejecución (precipitación): {elapsed_prec:.2f} segundos")
     mse_prec, mae_prec, sse_prec, nse_prec = calculate_errors(y_prec, y_pred_prec)
-    plot_results(y_prec, y_pred_prec, "Predicción con Precipitación", mse_prec, mae_prec, sse_prec, nse_prec)
+    plot_results(
+        y_prec, y_pred_prec,
+        f"Predicción con Precipitación (Tiempo: {elapsed_prec:.2f} s)",
+        mse_prec, mae_prec, sse_prec, nse_prec
+    )
 
-    
-    # Predicción con todos los factores meteorológicos
+    # 🕒 Tiempo para modelo con todos los factores
+    start_time_all = time.time()
     feature_cols = ['p_ens', 'tmin_ens', 'tmax_ens', 'rh_ens', 'wnd_ens', 'srad_ens', 'et_ens', 'pet_pm', 'pet_pt', 'pet_hg']
     X_all, y_all = prepare_data(df_scaled, feature_cols, 'Streamflow')
     model_all = train_lstm(X_all, y_all)
     y_pred_all = model_all.predict(X_all)
+    elapsed_all = time.time() - start_time_all
+    print(f"🕒 Tiempo de ejecución (todos los factores): {elapsed_all:.2f} segundos")
     mse_all, mae_all, sse_all, nse_all = calculate_errors(y_all, y_pred_all)
-    plot_results(y_all, y_pred_all, "Predicción con Todos los Factores Meteorológicos", mse_all, mae_all, sse_all, nse_all)
+    plot_results(
+        y_all, y_pred_all,
+        f"Predicción con Todos los Factores Meteorológicos (Tiempo: {elapsed_all:.2f} s)",
+        mse_all, mae_all, sse_all, nse_all
+    )
 
-    
 if __name__ == "__main__":
     main()
