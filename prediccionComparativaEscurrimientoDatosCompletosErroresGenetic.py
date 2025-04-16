@@ -8,6 +8,7 @@ from sklearn.metrics import mean_squared_error, mean_absolute_error
 from tkinter import Tk, filedialog
 from geneticalgorithm import geneticalgorithm as ga
 from tensorflow.keras import Input
+import time  # 🕒
 
 # Seleccionar archivo
 def select_file(title):
@@ -71,12 +72,12 @@ def optimize_lstm_with_ga(X, y):
     }
 
     model = ga(
-    function=model_param['function'],
-    dimension=model_param['dimension'],
-    variable_type=model_param['variable_type'],
-    variable_boundaries=model_param['variable_boundaries'],
-    algorithm_parameters=algorithm_param,
-    function_timeout=600.0  # Extiende tiempo para permitir entrenamiento
+        function=model_param['function'],
+        dimension=model_param['dimension'],
+        variable_type=model_param['variable_type'],
+        variable_boundaries=model_param['variable_boundaries'],
+        algorithm_parameters=algorithm_param,
+        function_timeout=600.0
     )
 
     model.run()
@@ -138,20 +139,37 @@ def main():
     for col in df.columns:
         df_scaled[col] = df[col] / df[col].max()
 
+    # 🕒 Medición de tiempo de ejecución
+    start_time = time.time()
+
     # Predicción con solo precipitación
     X_prec, y_prec = prepare_data(df_scaled, ['p_ens'], 'Streamflow')
     model_prec = optimize_lstm_with_ga(X_prec, y_prec)
     y_pred_prec = model_prec.predict(X_prec)
+
+    elapsed_time = time.time() - start_time
+    print(f"\n🕒 Tiempo total de ejecución: {elapsed_time:.2f} segundos")
+
     mse_prec, mae_prec, sse_prec, nse_prec = calculate_errors(y_prec, y_pred_prec)
-    plot_results(y_prec, y_pred_prec, "Predicción con Precipitación", mse_prec, mae_prec, sse_prec, nse_prec)
+    plot_results(
+        y_prec, y_pred_prec,
+        f"Predicción con Precipitación (GA, Tiempo: {elapsed_time:.2f} s)",
+        mse_prec, mae_prec, sse_prec, nse_prec
+    )
 
     # # Predicción con todos los factores meteorológicos (si deseas activarlo)
     # feature_cols = ['p_ens', 'tmin_ens', 'tmax_ens', 'rh_ens', 'wnd_ens', 'srad_ens', 'et_ens', 'pet_pm', 'pet_pt', 'pet_hg']
     # X_all, y_all = prepare_data(df_scaled, feature_cols, 'Streamflow')
     # model_all = optimize_lstm_with_ga(X_all, y_all)
     # y_pred_all = model_all.predict(X_all)
+    # elapsed_all = time.time() - start_time
+    # print(f"\n🕒 Tiempo total (todos los factores): {elapsed_all:.2f} segundos")
     # mse_all, mae_all, sse_all, nse_all = calculate_errors(y_all, y_pred_all)
-    # plot_results(y_all, y_pred_all, "Predicción con Todos los Factores Meteorológicos", mse_all, mae_all, sse_all, nse_all)
+    # plot_results(
+    #     y_all, y_pred_all,
+    #     f"Predicción con Todos los Factores Meteorológicos (GA, Tiempo: {elapsed_all:.2f} s)",
+    #     mse_all, mae_all, sse_all, nse_all
+    # )
 
 # Ejecutar
 if __name__ == "__main__":

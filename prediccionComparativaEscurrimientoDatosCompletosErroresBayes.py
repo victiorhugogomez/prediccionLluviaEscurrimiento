@@ -6,6 +6,7 @@ from tensorflow.keras.layers import LSTM, Dense
 import matplotlib.pyplot as plt
 from sklearn.metrics import mean_squared_error, mean_absolute_error
 from tkinter import Tk, filedialog
+import time  # 🕒
 
 # -------------------- Funciones utilitarias --------------------
 
@@ -96,6 +97,9 @@ def main():
     target_col = 'Streamflow'
     X, y = prepare_data(df_scaled, feature_cols, target_col)
 
+    # 🕒 Inicio del temporizador
+    start_time = time.time()
+
     # Optimización bayesiana
     result = optimize(X, y)
     best_units, best_batch, best_epochs = result.x
@@ -115,10 +119,18 @@ def main():
     model.compile(optimizer='adam', loss='mse')
     model.fit(X, y, epochs=int(best_epochs), batch_size=int(best_batch), verbose=1)
 
+    # 🕒 Fin del temporizador
+    elapsed_time = time.time() - start_time
+    print(f"\n🕒 Tiempo total de ejecución: {elapsed_time:.2f} segundos")
+
     # Predicción y evaluación
     y_pred = model.predict(X)
     mse, mae, sse, nse = calculate_errors(y, y_pred)
-    plot_results(y, y_pred, "Predicción con Precipitación (Optimización Bayesiana)", mse, mae, sse, nse)
+    plot_results(
+        y, y_pred,
+        f"Predicción con Precipitación (Bayesiana, Tiempo: {elapsed_time:.2f} s)",
+        mse, mae, sse, nse
+    )
 
 if __name__ == "__main__":
     main()
